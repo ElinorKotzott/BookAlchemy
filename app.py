@@ -20,12 +20,13 @@ def home():
     to the query with the sorting_param. querying and sending those rows into the index.html
     where they will be looped through"""
 
-    # creating empty sorting_param to add to the query depending on what the user pressed and an empty message
-
     sorting_param = ''
+    searching_param = ''
+    params = {}
     message = ''
 
-    order_by = request.args.get('order')
+    # getting user's wish to order from url
+    order_by = request.args.get('order', '')
 
     if order_by == 'order by title':
         sorting_param = 'ORDER BY title ASC'
@@ -34,20 +35,32 @@ def home():
         sorting_param = 'ORDER BY author ASC'
         message = 'Books ordered by author!'
 
-    rows = get_authors_and_books_from_database(sorting_param)
+    # getting search term from url
+    search_term = request.args.get('search', '').strip()
+
+    if search_term:
+        # both titles and authors are being searched. further searches (e.g. isbn) could be implemented easily
+        searching_param = "WHERE title LIKE :search_term OR author LIKE :search_term"
+        params["search_term"] = f"%{search_term}%"
+
+    rows = get_authors_and_books_from_database(sorting_param, searching_param, params)
+
+    if search_term and not rows:
+        message = 'No results found to match your search!'
+
     return render_template('index.html', message=message, rows=rows)
 
 
-def get_authors_and_books_from_database(sorting_param):
+def get_authors_and_books_from_database(sorting_param, searching_param, params):
     """helper method that takes a sorting parameter (by title, by author or empty string)
     and queries our database. it returns the result of the query if the query goes well, otherwise
     it returns an empty string"""
-    query_books_and_authors = f"""SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id {sorting_param}"""
+    query_books_and_authors = f"""SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id {sorting_param} {searching_param}"""
 
     engine = create_engine('sqlite:///data/library.sqlite')
     try:
         with engine.connect() as connection:
-            results = connection.execute(text(query_books_and_authors))
+            results = connection.execute(text(query_books_and_authors), params)
             rows = results.fetchall()
             return rows
     except OperationalError as e:
