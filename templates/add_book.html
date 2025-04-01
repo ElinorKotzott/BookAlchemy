@@ -7,9 +7,18 @@
   </head>
   <body>
 
-  <form action="/add_author" method="POST">
-  <!-- Add the form here -->
+  <form action="/add_book" method="POST">
+  <label for="title">Book Title:</label>
+  <input type="text" id="title" name="title" required><br><br>
+  <label for="isbn">ISBN:</label>
+  <input type="text" id="isbn" name="isbn"><br><br>
+  <label for="publication_year">Publication Year</label>
+  <input type="number" id="publication_year" name="publication_year"><br><br>
+  <input type="submit" value="Add Book">
   </form>
+  {% if message %}
+    <p style="font-weight: bold">{{ message }}</p>
+  {% endif %}
 
   </body>
 </html>
