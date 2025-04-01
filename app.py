@@ -1,7 +1,5 @@
 import os
-
 from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, InterfaceError, DatabaseError
-
 from data_models import db, Author, Book
 from datetime import datetime
 from flask import Flask, render_template, request
@@ -16,24 +14,25 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'dat
 db.init_app(app)
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def home():
     """checking whether one of the ordering buttons has been pressed and adding ordering logic
     to the query with the sorting_param. querying and sending those rows into the index.html
     where they will be looped through"""
 
     # creating empty sorting_param to add to the query depending on what the user pressed and an empty message
+
     sorting_param = ''
     message = ''
 
-    if request.method == 'POST':
-        order_by = request.form.get('order')
-        if order_by == 'order by title':
-            sorting_param = 'ORDER BY title ASC'
-            message = 'books ordered by title!'
-        if order_by == 'order by author':
-            sorting_param = 'ORDER BY author ASC'
-            message = 'books ordered by author!'
+    order_by = request.args.get('order')
+
+    if order_by == 'order by title':
+        sorting_param = 'ORDER BY title ASC'
+        message = 'Books ordered by title!'
+    elif order_by == 'order by author':
+        sorting_param = 'ORDER BY author ASC'
+        message = 'Books ordered by author!'
 
     rows = get_authors_and_books_from_database(sorting_param)
     return render_template('index.html', message=message, rows=rows)
