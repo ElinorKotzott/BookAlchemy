@@ -28,20 +28,35 @@ def handle_author():
         birth_date = datetime.strptime(birth_date, "%Y-%m-%d").date()
         if death_date:
             death_date = datetime.strptime(death_date, "%Y-%m-%d").date()
+        else:
+            death_date = None
 
         new_author = Author(name=name, birth_date=birth_date, date_of_death=death_date)
 
         db.session.add(new_author)
         db.session.commit()
 
-        return render_template('add_author.html', message = 'author added successfully!')
+        return render_template('add_author.html', message = 'Author added successfully!')
     else:
         return render_template('add_author.html')
 
 
 @app.route("/add_book", methods = ['GET', 'POST'])
 def add_book():
-    pass
+    if request.method == 'POST':
+        authors = Author.queery.all()
+        title = request.form.get('title')
+        isbn = request.form.get('isbn')
+        publication_year = request.form.get('publication_year')
+
+        new_book = Book(title=title, isbn=isbn, publication_year=publication_year)
+
+        db.session.add(new_book)
+        db.session.commit()
+
+        return render_template('add_book.html', authors=authors, message = 'Book added successfully!')
+    else:
+        return render_template('add_book.html')
 
 
 
