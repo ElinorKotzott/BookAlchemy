@@ -6,8 +6,10 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 </head>
 <body>
-<input type="submit" name="order" value="order by author" style="display: inline-block; margin-right: 10px">
-<input type="submit" name="order" value="order by title" style="display: inline-block;"><br><br>
+<form method="POST">
+    <input type="submit" name="order" value="order by author" style="display: inline-block; margin-right: 10px">
+    <input type="submit" name="order" value="order by title" style="display: inline-block;"><br><br>
+</form>
 {% for row in rows %}
 <div><h3>"{{ row[0] }}" by {{ row[1] }}</h3>
 </div>

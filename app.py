@@ -15,15 +15,15 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'dat
 
 db.init_app(app)
 
-#TODO create general query, check whether a button is pressed
-# and which one it is, create extra query parameter and add that to the query
 
-
-
-@app.route('/', methods=['GET'])
+@app.route('/', methods=['GET', 'POST'])
 def home():
-    """querying all books with respective authors and sending those rows into
-    the index.html where they will be looped through"""
+    """checking whether one of the ordering buttons has been pressed and adding ordering logic
+    to the query with the sorting_param. querying and sending those rows into the index.html
+    where they will be looped through"""
+
+    # creating sorting_param and a message to add to the query depending on what the user pressed
+    if request.method == 'POST':
 
     order_by = request.form.get('order')
     if order_by == 'order by title':
@@ -36,15 +36,27 @@ def home():
         sorting_param = ''
         message = ''
 
-    query_books_and_authors = f"""SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id {sorting_param}"""
 
+
+    # connecting to database, fetching books and authors, rendering the template
+
+    return render_template('index.html', message=message, rows=rows)
+
+    return render_template('index.html', message='An error occurred with our database!', rows=[])
+
+    else:
+        pass
+
+
+def get_authors_and_books_from_database(sorting_param):
+    query_books_and_authors = f"""SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id {sorting_param}"""
 
     engine = create_engine('sqlite:///data/library.sqlite')
     try:
         with engine.connect() as connection:
             results = connection.execute(text(query_books_and_authors))
             rows = results.fetchall()
-            return render_template('index.html', message=message, rows=rows)
+            return rows
     except OperationalError as e:
         print(f"Operational error: {e}")
     except ProgrammingError as e:
@@ -57,7 +69,7 @@ def home():
         print(f"Database error: {e}")
     except Exception as e:
         print(f"An error occurred with our database: {e}")
-    return render_template('index.html', message='An error occurred with our database!', rows=[])
+    return []
 
 
 @app.route('/add_author', methods=['GET', 'POST'])
