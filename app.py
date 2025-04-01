@@ -15,19 +15,36 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'dat
 
 db.init_app(app)
 
+#TODO create general query, check whether a button is pressed
+# and which one it is, create extra query parameter and add that to the query
+
+
 
 @app.route('/', methods=['GET'])
 def home():
     """querying all books with respective authors and sending those rows into
     the index.html where they will be looped through"""
-    query_get_books_with_respective_author = """SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id"""
+
+    order_by = request.form.get('order')
+    if order_by == 'order by title':
+        sorting_param = 'ORDER BY title DESC'
+        message = 'books ordered by title!'
+    elif order_by == 'order by author':
+        sorting_param = 'ORDER BY author DESC'
+        message = 'books ordered by author!'
+    else:
+        sorting_param = ''
+        message = ''
+
+    query_books_and_authors = f"""SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id {sorting_param}"""
+
 
     engine = create_engine('sqlite:///data/library.sqlite')
     try:
         with engine.connect() as connection:
-            results = connection.execute(text(query_get_books_with_respective_author))
+            results = connection.execute(text(query_books_and_authors))
             rows = results.fetchall()
-            return render_template('index.html', rows=rows)
+            return render_template('index.html', message=message, rows=rows)
     except OperationalError as e:
         print(f"Operational error: {e}")
     except ProgrammingError as e:
