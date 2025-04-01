@@ -1,31 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  </head>
-  <body>
+</head>
+<body>
 
-  <form action="/add_book" method="POST">
-  <label for="title">Book Title:</label>
-  <input type="text" id="title" name="title" required><br><br>
-  <label for="author">Author:</label>
+<form action="/add_book" method="POST">
+    <label for="title">Book Title:</label>
+    <input type="text" id="title" name="title" required><br><br>
+    <label for="author">Author:</label>
     <select id="author" name="author_id" required>
         <option value="">select an author</option>
         {% for author in authors %}
-            <option value="{{ author.id }}">{{ author.name }}</option>
+        <option value="{{ author.id }}">{{ author.name }}</option>
         {% endfor %}
     </select><br><br>
-  <label for="isbn">ISBN:</label>
-  <input type="text" id="isbn" name="isbn" required><br><br>
-  <label for="publication_year">Publication Year</label>
-  <input type="number" id="publication_year" name="publication_year" required><br><br>
-  <input type="submit" value="Add Book">
-  </form>
-  {% if message %}
-    <p style="font-weight: bold">{{ message }}</p>
-  {% endif %}
+    <label for="isbn">ISBN:</label>
+    <input type="text" id="isbn" name="isbn" required><br><br>
+    <label for="publication_year">Publication Year</label>
+    <input type="number" id="publication_year" name="publication_year" required><br><br>
+    <input type="submit" value="Add Book">
+</form>
+{% if message %}
+<p style="font-weight: bold">{{ message }}</p>
+{% endif %}
 
-  </body>
+</body>
 </html>

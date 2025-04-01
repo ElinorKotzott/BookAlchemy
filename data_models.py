@@ -1,8 +1,8 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, String, Date, Integer, ForeignKey
 
-
 db = SQLAlchemy()
+
 
 class Author(db.Model):
     __tablename__ = "authors"
@@ -19,6 +19,7 @@ class Author(db.Model):
             representation = representation + f", died in {self.date_of_death}"
         return representation
 
+
 class Book(db.Model):
     __tablename__ = "books"
 
@@ -29,9 +30,6 @@ class Book(db.Model):
     author_id = Column(Integer, ForeignKey("authors.id", ondelete="CASCADE"), nullable=False)
 
 
-
     def __str__(self):
         return (f"{self.id}, id: {self.id}, isbn: {self.isbn}, title: '{self.title}', published "
                 f"in: {self.publication_year}, author_id: {self.author_id}")
-
-
