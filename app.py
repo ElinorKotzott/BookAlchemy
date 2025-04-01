@@ -1,5 +1,8 @@
 
 import os
+
+from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, InterfaceError, DatabaseError
+
 from data_models import db, Author, Book
 from datetime import datetime
 from flask import Flask, render_template, request
@@ -18,17 +21,31 @@ db.init_app(app)
 
 @app.route('/', methods=['GET'])
 def home():
-    """shows the home page by rendering index.html, sending in all the books in our database"""
+    """querying all books with respective authors and sending those rows into
+    the index.html where they will be looped through"""
     query_get_books_with_respective_author = """SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id"""
 
-    #books = Book.query.all()
-
     engine = create_engine('sqlite:///data/library.sqlite')
-    with engine.connect() as connection:
-        results = connection.execute(text(query_get_books_with_respective_author))
-        rows = results.fetchall()
+    try:
+        with engine.connect() as connection:
+            results = connection.execute(text(query_get_books_with_respective_author))
+            rows = results.fetchall()
+            return render_template('index.html', rows=rows)
+    except OperationalError as e:
+        print(f"Operational error: {e}")
+    except ProgrammingError as e:
+        print(f"SQL syntax error: {e}")
+    except IntegrityError as e:
+        print(f"Integrity error: {e}")
+    except InterfaceError as e:
+        print(f"Interface error: {e}")
+    except DatabaseError as e:
+        print(f"Database error: {e}")
+    except Exception as e:
+        print(f"An error occurred with our database: {e}")
+    return render_template('index.html', message='An error occurred with our database!', rows=[])
 
-    return render_template('index.html', rows=rows)
+
 
 
 @app.route('/add_author', methods=['GET', 'POST'])

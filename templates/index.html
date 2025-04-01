@@ -10,6 +10,9 @@
 <div><h3>"{{ row[0] }}" by {{ row[1] }}</h3>
 </div>
 {% endfor %}
+{% if message %}
+<p style="font-weight: bold">{{ message }}</p>
+{% endif %}
 
 </body>
 </html>
