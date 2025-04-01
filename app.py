@@ -1,4 +1,3 @@
-
 import os
 
 from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, InterfaceError, DatabaseError
@@ -6,9 +5,7 @@ from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, I
 from data_models import db, Author, Book
 from datetime import datetime
 from flask import Flask, render_template, request
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, text
-
 
 app = Flask(__name__)
 
@@ -44,8 +41,6 @@ def home():
     except Exception as e:
         print(f"An error occurred with our database: {e}")
     return render_template('index.html', message='An error occurred with our database!', rows=[])
-
-
 
 
 @app.route('/add_author', methods=['GET', 'POST'])
@@ -103,7 +98,6 @@ def add_book():
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
-
 
 # with app.app_context():
 #  db.create_all()
