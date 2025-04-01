@@ -22,33 +22,27 @@ def home():
     to the query with the sorting_param. querying and sending those rows into the index.html
     where they will be looped through"""
 
-    # creating sorting_param and a message to add to the query depending on what the user pressed
+    # creating empty sorting_param to add to the query depending on what the user pressed and an empty message
+    sorting_param = ''
+    message = ''
+
     if request.method == 'POST':
+        order_by = request.form.get('order')
+        if order_by == 'order by title':
+            sorting_param = 'ORDER BY title ASC'
+            message = 'books ordered by title!'
+        if order_by == 'order by author':
+            sorting_param = 'ORDER BY author ASC'
+            message = 'books ordered by author!'
 
-    order_by = request.form.get('order')
-    if order_by == 'order by title':
-        sorting_param = 'ORDER BY title DESC'
-        message = 'books ordered by title!'
-    elif order_by == 'order by author':
-        sorting_param = 'ORDER BY author DESC'
-        message = 'books ordered by author!'
-    else:
-        sorting_param = ''
-        message = ''
-
-
-
-    # connecting to database, fetching books and authors, rendering the template
-
+    rows = get_authors_and_books_from_database(sorting_param)
     return render_template('index.html', message=message, rows=rows)
-
-    return render_template('index.html', message='An error occurred with our database!', rows=[])
-
-    else:
-        pass
 
 
 def get_authors_and_books_from_database(sorting_param):
+    """helper method that takes a sorting parameter (by title, by author or empty string)
+    and queries our database. it returns the result of the query if the query goes well, otherwise
+    it returns an empty string"""
     query_books_and_authors = f"""SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id {sorting_param}"""
 
     engine = create_engine('sqlite:///data/library.sqlite')
