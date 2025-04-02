@@ -2,7 +2,7 @@ import os
 from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, InterfaceError, DatabaseError
 from data_models import db, Author, Book
 from datetime import datetime
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
@@ -12,6 +12,9 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'data', 'library.sqlite')}"
 
 db.init_app(app)
+
+#TODO if the user searches and finds at least one book, and then orders the search
+# then all books will be ordered, not only the ones searched! fix this!
 
 
 @app.route('/', methods=['GET'])
@@ -25,13 +28,12 @@ def home():
     params = {}
     message = ''
 
-    # getting user's wish to order from url
     order_by = request.args.get('order', '')
 
-    if order_by == 'order by title':
+    if order_by == 'title':
         sorting_param = 'ORDER BY title ASC'
         message = 'Books ordered by title!'
-    elif order_by == 'order by author':
+    elif order_by == 'author':
         sorting_param = 'ORDER BY author ASC'
         message = 'Books ordered by author!'
 
@@ -42,6 +44,7 @@ def home():
         # both titles and authors are being searched. further searches (e.g. isbn) could be implemented easily
         searching_param = "WHERE title LIKE :search_term OR author LIKE :search_term"
         params["search_term"] = f"%{search_term}%"
+
 
     rows = get_authors_and_books_from_database(sorting_param, searching_param, params)
 
@@ -55,7 +58,7 @@ def get_authors_and_books_from_database(sorting_param, searching_param, params):
     """helper method that takes a sorting parameter (by title, by author or empty string)
     and queries our database. it returns the result of the query if the query goes well, otherwise
     it returns an empty string"""
-    query_books_and_authors = f"""SELECT title, name AS author FROM authors JOIN books ON books.author_id = authors.id {sorting_param} {searching_param}"""
+    query_books_and_authors = f"""SELECT books.title, authors.name AS author, books.id  FROM authors JOIN books ON books.author_id = authors.id {sorting_param} {searching_param}"""
 
     engine = create_engine('sqlite:///data/library.sqlite')
     try:
@@ -129,6 +132,21 @@ def add_book():
         return render_template('add_book.html', authors=authors, message='Book added successfully!')
     else:
         return render_template('add_book.html', authors=authors)
+
+
+@app.route('/book/<int:book_id>/delete', methods=['POST'])
+def delete(book_id):
+
+    book = Book.query.get(book_id)
+    if not book:
+        message = 'Book not found!'
+    else:
+        db.session.delete(book)
+        db.session.commit()
+        message = "Book deleted successfully!"
+
+    return render_template('index/html', message=message, rows=get_authors_and_books_from_database())
+#TODO should i redirect here? how to print the messages then? if not redirect, where to get the params for rows call??
 
 
 if __name__ == '__main__':

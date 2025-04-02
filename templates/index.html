@@ -7,15 +7,18 @@
 </head>
 <body>
 <form method="GET">
-    <input type="text" name="search" placeholder="Search">
-    <input type="submit" value="Search">
+    <input type="text" name="search" placeholder="Search" style="margin-bottom: 10px">
+    <input type="submit" value="Search" style="margin-bottom: 10px">
 </form>
 <form method="GET">
-    <input type="submit" name="order" value="order by author" style="display: inline-block; margin-right: 10px">
-    <input type="submit" name="order" value="order by title" style="display: inline-block;"><br><br>
+    <input type="submit" name="order" value="author" style="display: inline-block; margin-right: 10px">
+    <input type="submit" name="order" value="title" style="display: inline-block;"><br><br>
 </form>
 {% for row in rows %}
 <div><h3>"{{ row[0] }}" by {{ row[1] }}</h3>
+    <form method="POST" action="{{ url_for('delete', book_id=row[2]) }}">
+        <input type="submit" value="Delete">
+    </form>
 </div>
 {% endfor %}
 {% if message %}
