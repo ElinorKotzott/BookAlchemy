@@ -2,7 +2,7 @@ import os
 from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, InterfaceError, DatabaseError
 from data_models import db, Author, Book
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
@@ -13,52 +13,83 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'dat
 
 db.init_app(app)
 
-#TODO if the user searches and finds at least one book, and then orders the search
-# then all books will be ordered, not only the ones searched! fix this!
+latest_search_term = ''
 
+#TODO after deleting the last book, pressing search or order leads to a 405 error,
+# method not allowed - why? how to fix this?
+#TODO reloading the home page after adding a book wont give me a page filled with all books but an empty page.
+# only after searching nothing the books appear. why? is the latest search term still saved? reset it!
 
 @app.route('/', methods=['GET'])
 def home():
-    """checking whether one of the ordering buttons has been pressed and adding ordering logic
-    to the query with the sorting_param. querying and sending those rows into the index.html
-    where they will be looped through"""
+    """Checking whether one of the ordering buttons has been pressed and adding ordering logic
+    to the query with the sorting_param. Querying and sending those rows into the index.html
+    where they will be looped through."""
 
+    global latest_search_term
     sorting_param = ''
     searching_param = ''
     params = {}
     message = ''
 
+    if not Book.query.all() and not Author.query.all():
+        message = 'No books or authors available in the database!'
+
     order_by = request.args.get('order', '')
 
-    if order_by == 'title':
+    if order_by == 'order by title':
         sorting_param = 'ORDER BY title ASC'
         message = 'Books ordered by title!'
-    elif order_by == 'author':
+    elif order_by == 'order by author':
         sorting_param = 'ORDER BY author ASC'
         message = 'Books ordered by author!'
 
-    # getting search term from url
-    search_term = request.args.get('search', '').strip()
+    # getting search term from URL
+    search_term = request.args.get('search')
+    if search_term is not None:
+        search_term = search_term.strip()
 
-    if search_term:
-        # both titles and authors are being searched. further searches (e.g. isbn) could be implemented easily
-        searching_param = "WHERE title LIKE :search_term OR author LIKE :search_term"
-        params["search_term"] = f"%{search_term}%"
+    if search_term is None:
+        if latest_search_term:
+            searching_param = "WHERE title LIKE :latest_search_term OR author LIKE :latest_search_term"
+            params["latest_search_term"] = f"%{latest_search_term}%"
+        else:
+            searching_param = ''
+            params = {}
+    elif search_term == '':
+        searching_param = ''
+        params = {}
+    else:
+        latest_search_term = search_term
+        searching_param = "WHERE title LIKE :latest_search_term OR author LIKE :latest_search_term"
+        params["latest_search_term"] = f"%{latest_search_term}%"
 
+    #different additions to the query depending on whether searching param and query param exist
+    if searching_param and sorting_param:
+        query = f"{searching_param} {sorting_param}"
+    elif searching_param:
+        query = f"{searching_param}"
+    elif sorting_param:
+        query = f"{sorting_param}"
+    else:
+        query = ""
 
-    rows = get_authors_and_books_from_database(sorting_param, searching_param, params)
+    rows = get_authors_and_books_from_database(query, params)
 
     if search_term and not rows:
         message = 'No results found to match your search!'
 
+    if sorting_param and not rows:
+        message = 'No results to order!'
+
     return render_template('index.html', message=message, rows=rows)
 
 
-def get_authors_and_books_from_database(sorting_param, searching_param, params):
+def get_authors_and_books_from_database(query, params):
     """helper method that takes a sorting parameter (by title, by author or empty string)
     and queries our database. it returns the result of the query if the query goes well, otherwise
     it returns an empty string"""
-    query_books_and_authors = f"""SELECT books.title, authors.name AS author, books.id  FROM authors JOIN books ON books.author_id = authors.id {sorting_param} {searching_param}"""
+    query_books_and_authors = f"""SELECT books.title, authors.name AS author, books.id FROM authors JOIN books ON books.author_id = authors.id {query}"""
 
     engine = create_engine('sqlite:///data/library.sqlite')
     try:
@@ -85,6 +116,7 @@ def get_authors_and_books_from_database(sorting_param, searching_param, params):
 def handle_author():
     """allows user to add a new author. get request displays the page. user will enter name, birthdate and
     date of death. post request takes in data to create a new author. the author is then added to our database."""
+    message = ''
     if request.method == 'POST':
         # getting data from the form
         name = request.form.get('name')
@@ -100,21 +132,20 @@ def handle_author():
 
         # creating new author
         new_author = Author(name=name, birth_date=birth_date, date_of_death=death_date)
-
+        message = 'Author added successfully!'
         db.session.add(new_author)
         db.session.commit()
 
-        return render_template('add_author.html', message='Author added successfully!')
-    else:
-        return render_template('add_author.html')
+    return render_template('add_author.html', message=message)
 
 
-@app.route("/add_book", methods=['GET', 'POST'])
+@app.route('/add_book', methods=['GET', 'POST'])
 def add_book():
     """allows user to add a new book. get request displays the page. user will enter title, isbn, publication year
     and select an author from the dropdown menu that displays all authors from the authors table. the new book is
     then added to our database."""
     # getting all authors from the database
+    message = ''
     authors = Author.query.all()
     if request.method == 'POST':
         # getting data from the form
@@ -125,28 +156,33 @@ def add_book():
 
         # creating new book
         new_book = Book(title=title, isbn=isbn, publication_year=publication_year, author_id=author_id)
-
         db.session.add(new_book)
         db.session.commit()
+        message = 'Book added successfully!'
 
-        return render_template('add_book.html', authors=authors, message='Book added successfully!')
-    else:
-        return render_template('add_book.html', authors=authors)
+    return render_template('add_book.html', authors=authors, message=message)
 
 
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
 def delete(book_id):
-
+    global latest_search_term
     book = Book.query.get(book_id)
+    author_id = book.author_id
+
     if not book:
         message = 'Book not found!'
     else:
         db.session.delete(book)
         db.session.commit()
-        message = "Book deleted successfully!"
+        message = 'Book deleted successfully!'
+        books_by_the_same_author = Book.query.filter(Book.author_id == author_id).all()
+        if not books_by_the_same_author:
+            author = Author.query.get(author_id)
+            db.session.delete(author)
+            db.session.commit()
+            message = 'Book deleted successfully. Author deleted as well because no other books from this author are available!'
 
-    return render_template('index/html', message=message, rows=get_authors_and_books_from_database())
-#TODO should i redirect here? how to print the messages then? if not redirect, where to get the params for rows call??
+    return render_template('index.html', message=message, rows=get_authors_and_books_from_database('', {}))
 
 
 if __name__ == '__main__':
