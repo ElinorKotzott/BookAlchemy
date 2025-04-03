@@ -17,7 +17,8 @@
 {% for row in rows %}
 <img class="cover_image"
      src="https://covers.openlibrary.org/b/isbn/{{ row[3] }}-M.jpg"
-     alt="No image available">
+     alt="No image available"
+     style="margin-top: 10px">
 <div><h3>"{{ row[0] }}" by {{ row[1] }}</h3>
     <form method="POST" action="{{ url_for('delete', book_id=row[2]) }}">
         <input type="submit" value="Delete">

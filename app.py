@@ -57,6 +57,7 @@ def home():
             searching_param = ''
             params = {}
     elif search_term == '':
+        latest_search_term = ''
         searching_param = ''
         params = {}
     else:
@@ -73,6 +74,8 @@ def home():
         query = f"{sorting_param}"
     else:
         query = ""
+
+    print(search_term, latest_search_term)
 
     rows = get_authors_and_books_from_database(query, params)
 
