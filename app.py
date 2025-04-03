@@ -17,8 +17,6 @@ latest_search_term = ''
 
 #TODO after deleting the last book, pressing search or order leads to a 405 error,
 # method not allowed - why? how to fix this?
-#TODO reloading the home page after adding a book wont give me a page filled with all books but an empty page.
-# only after searching nothing the books appear. why? is the latest search term still saved? reset it!
 
 @app.route('/', methods=['GET'])
 def home():
@@ -146,6 +144,7 @@ def add_book():
     then added to our database."""
     # getting all authors from the database
     message = ''
+    global latest_search_term
     authors = Author.query.all()
     if request.method == 'POST':
         # getting data from the form
@@ -159,13 +158,14 @@ def add_book():
         db.session.add(new_book)
         db.session.commit()
         message = 'Book added successfully!'
+        # resetting latest_search_term, because otherwise only books including the latest search will be shown when going back to home
+        latest_search_term = ''
 
     return render_template('add_book.html', authors=authors, message=message)
 
 
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
 def delete(book_id):
-    global latest_search_term
     book = Book.query.get(book_id)
     author_id = book.author_id
 
