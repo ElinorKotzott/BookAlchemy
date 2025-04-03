@@ -13,10 +13,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'dat
 
 db.init_app(app)
 
+#global variable to be able to save search for ordering
 latest_search_term = ''
-
-#TODO after deleting the last book, pressing search or order leads to a 405 error,
-# method not allowed - why? how to fix this?
 
 @app.route('/', methods=['GET'])
 def home():
