@@ -13,8 +13,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'dat
 
 db.init_app(app)
 
-#global variable to be able to save search for ordering
+# global variable to be able to save search for ordering
 latest_search_term = ''
+
 
 @app.route('/', methods=['GET'])
 def home():
@@ -30,11 +31,13 @@ def home():
     params = {}
     message = ''
 
-    if not Book.query.all() and not Author.query.all():
-        message = 'No books or authors available in the database!'
+    #message for if the database is empty
+    if not Book.query.all():
+        message = 'No books available in the database!'
 
     order_by = request.args.get('order', '')
 
+    # checking if any of the order buttons has been pressed
     if order_by == 'order by title':
         sorting_param = 'ORDER BY title ASC'
         message = 'Books ordered by title!'
@@ -47,6 +50,8 @@ def home():
     if search_term is not None:
         search_term = search_term.strip()
 
+    # this logic checks whether search is none (user didn't press search), empty string (user pressed search without input)
+    # or has a value (user entered a search and pressed search). it assigns to the latest_search_term, our global variable
     if search_term is None:
         if latest_search_term:
             searching_param = "WHERE title LIKE :latest_search_term OR author LIKE :latest_search_term"
@@ -55,6 +60,7 @@ def home():
             searching_param = ''
             params = {}
     elif search_term == '':
+        # resetting latest search term
         latest_search_term = ''
         searching_param = ''
         params = {}
@@ -63,7 +69,7 @@ def home():
         searching_param = "WHERE title LIKE :latest_search_term OR author LIKE :latest_search_term"
         params["latest_search_term"] = f"%{latest_search_term}%"
 
-    #different additions to the query depending on whether searching param and query param exist
+    # different additions to the query depending on whether searching param and query param exist
     if searching_param and sorting_param:
         query = f"{searching_param} {sorting_param}"
     elif searching_param:
@@ -145,7 +151,6 @@ def add_book():
     """allows user to add a new book. get request displays the page. user will enter title, isbn, publication year
     and select an author from the dropdown menu that displays all authors from the authors table. the new book is
     then added to our database."""
-    # getting all authors from the database
     message = ''
     global latest_search_term
     authors = Author.query.all()
@@ -163,12 +168,14 @@ def add_book():
         message = 'Book added successfully!'
         # resetting latest_search_term, because otherwise only books including the latest search will be shown when going back to home
         latest_search_term = ''
-
     return render_template('add_book.html', authors=authors, message=message)
 
 
 @app.route('/book/<int:book_id>/delete', methods=['POST'])
 def delete(book_id):
+    """allows user to delete a book by pressing on the button. the deletion uses the book id that
+    is also part of the database query. after deleting the book, this function checks the database
+    for further books by the same author. if none are found, the author is also deleted"""
     book = Book.query.get(book_id)
     author_id = book.author_id
 
@@ -185,6 +192,7 @@ def delete(book_id):
             db.session.commit()
             message = 'Book deleted successfully. Author deleted as well because no other books from this author are available!'
 
+    # doesn't redirect to home but instead renders home template because the message could not be displayed otherwise
     return render_template('index.html', message=message, rows=get_authors_and_books_from_database('', {}))
 
 
