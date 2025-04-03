@@ -14,6 +14,7 @@ class Author(db.Model):
 
 
     def __str__(self):
+        """represents instance of author as a string"""
         representation = f"{self.name}, id: {self.id}, born in {self.birth_date}"
         if self.date_of_death:
             representation = representation + f", died in {self.date_of_death}"
@@ -31,5 +32,6 @@ class Book(db.Model):
 
 
     def __str__(self):
+        """represents instance of book as a string"""
         return (f"{self.id}, id: {self.id}, isbn: {self.isbn}, title: '{self.title}', published "
                 f"in: {self.publication_year}, author_id: {self.author_id}")

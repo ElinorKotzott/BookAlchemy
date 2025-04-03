@@ -1,9 +1,9 @@
 import os
-from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, InterfaceError, DatabaseError
 from data_models import db, Author, Book
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, ProgrammingError, IntegrityError, InterfaceError, DatabaseError
 
 app = Flask(__name__)
 
@@ -22,9 +22,11 @@ latest_search_term = ''
 def home():
     """Checking whether one of the ordering buttons has been pressed and adding ordering logic
     to the query with the sorting_param. Querying and sending those rows into the index.html
-    where they will be looped through."""
+    where they will be looped through. the latest search term exists so that the search term will
+    still be considered (and not reset to empty string) if the user decides to order right after searching"""
 
     global latest_search_term
+
     sorting_param = ''
     searching_param = ''
     params = {}
@@ -84,10 +86,10 @@ def home():
 
 
 def get_authors_and_books_from_database(query, params):
-    """helper method that takes a sorting parameter (by title, by author or empty string)
-    and queries our database. it returns the result of the query if the query goes well, otherwise
-    it returns an empty string"""
-    query_books_and_authors = f"""SELECT books.title, authors.name AS author, books.id FROM authors JOIN books ON books.author_id = authors.id {query}"""
+    """helper method that takes the last part of the query (query) and the latest search term as 'param'.
+    it returns the result of the query if the query goes well, otherwise it returns an empty list"""
+    query_books_and_authors = f"""SELECT books.title, authors.name AS author, books.id, books.isbn
+    FROM authors JOIN books ON books.author_id = authors.id {query}"""
 
     engine = create_engine('sqlite:///data/library.sqlite')
     try:
